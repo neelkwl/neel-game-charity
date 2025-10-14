@@ -1,116 +1,258 @@
-const form = document.getElementById("checkInForm");
-const maxGoal = 50;
+// Charity Water Game Logic
 
-// Load counts from localStorage or set to 0
-let totalCount = Number(localStorage.getItem("totalCount")) || 0;
-let waterCount = Number(localStorage.getItem("waterCount")) || 0;
-let zeroCount = Number(localStorage.getItem("zeroCount")) || 0;
-let powerCount = Number(localStorage.getItem("powerCount")) || 0;
+// DOM Elements
+const startScreen = document.getElementById("start-screen");
+const startBtn = document.getElementById("start-btn");
+const hud = document.getElementById("hud");
+const scoreEl = document.getElementById("score");
+const timerEl = document.getElementById("timer");
+const toast = document.getElementById("toast");
+const gameArea = document.getElementById("game-area");
+const cup = document.getElementById("cup");
+const endScreen = document.getElementById("end-screen");
+const finalScoreEl = document.getElementById("final-score");
+const replayBtn = document.getElementById("replay-btn");
 
-// Load attendee list from localStorage or set to empty array
-let attendeeList = [];
-try {
-  attendeeList = JSON.parse(localStorage.getItem("attendeeList")) || [];
-} catch (e) {
-  attendeeList = [];
+// Game State
+let score = 0;
+let time = 60;
+let gameInterval = null;
+let dropInterval = null;
+let funRush = false;
+let funRushTimeout = null;
+let bestScore = localStorage.getItem("bestScore") || 0;
+
+// Cup movement
+let cupX = 160; // initial position (centered)
+const cupWidth = 80;
+const areaWidth = 400;
+
+function showScreen(screen) {
+  startScreen.classList.add("hidden");
+  hud.classList.add("hidden");
+  gameArea.classList.add("hidden");
+  endScreen.classList.add("hidden");
+  screen.classList.remove("hidden");
 }
 
-// Update UI with loaded values
-document.getElementById("attendeeCount").textContent = totalCount;
-document.getElementById("waterCount").textContent = waterCount;
-document.getElementById("zeroCount").textContent = zeroCount;
-document.getElementById("powerCount").textContent = powerCount;
-document.getElementById("progressBar").style.width = `${
-  (totalCount / maxGoal) * 100
-}%`;
+function startGame() {
+  score = 0;
+  time = 60;
+  funRush = false;
+  cupX = (areaWidth - cupWidth) / 2;
+  updateCup();
+  document.getElementById("running-number").textContent = score;
+  timerEl.textContent = `Time: ${time}s`;
+  clearDrops();
+  showScreen(hud);
+  gameArea.classList.remove("hidden");
+  hud.classList.remove("hidden");
+  startScreen.classList.add("hidden");
+  endScreen.classList.add("hidden");
+  gameInterval = setInterval(gameTick, 1000);
+  dropInterval = setInterval(spawnDrop, 900);
+}
 
-// Render attendee list
-function renderAttendeeList() {
-  const attendeeListElement = document.getElementById("attendeeList");
-  attendeeListElement.innerHTML = "";
-  for (let i = 0; i < attendeeList.length; i++) {
-    const attendee = attendeeList[i];
-    const li = document.createElement("li");
-    li.className = "attendee-list-item";
-    li.textContent = `${attendee.name} – ${attendee.teamLabel}`;
-    attendeeListElement.appendChild(li);
+function endGame() {
+  clearInterval(gameInterval);
+  clearInterval(dropInterval);
+  clearTimeout(funRushTimeout);
+  clearDrops();
+  finalScoreEl.textContent = `Final Score: ${score}`;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("bestScore", bestScore);
+    finalScoreEl.textContent += ` (Best!)`;
+  } else {
+    finalScoreEl.textContent += ` | Best: ${bestScore}`;
+  }
+  showScreen(endScreen);
+}
+
+function gameTick() {
+  time--;
+  timerEl.textContent = `Time: ${time}s`;
+  if (time <= 0) {
+    endGame();
   }
 }
-renderAttendeeList();
 
-form.addEventListener("submit", function (event) {
-  event.preventDefault();
-
-  const nameInput = document.getElementById("attendeeName");
-  const teamSelect = document.getElementById("teamSelect");
-
-  const attendeeName = nameInput.value;
-  const selectedTeam = teamSelect.value;
-
-  totalCount = totalCount + 1;
-  const progressPercent = (totalCount / maxGoal) * 100;
-  // Save total count
-  localStorage.setItem("totalCount", totalCount);
-
-  let teamLabel = "";
-  if (selectedTeam === "water") {
-    teamLabel = "Team Water Wise";
-  } else if (selectedTeam === "zero") {
-    teamLabel = "Team Net Zero";
-  } else if (selectedTeam === "power") {
-    teamLabel = "Team Renewables";
+function spawnDrop() {
+  const drop = document.createElement("div");
+  drop.classList.add("drop");
+  let type;
+  if (funRush) {
+    type = "blue";
+  } else {
+    const r = Math.random();
+    if (r < 0.65) type = "blue";
+    else if (r < 0.85) type = "red";
+    else type = "green";
   }
-
-  const greeting = `Welcome, ${attendeeName}! You are checked in for ${teamLabel}.`;
-  const greetingElement = document.getElementById("greeting");
-  greetingElement.textContent = greeting;
-  greetingElement.classList.add("success-message");
-  greetingElement.style.display = "block";
-
-  // Add attendee to list and save
-  attendeeList.push({ name: attendeeName, teamLabel: teamLabel });
-  localStorage.setItem("attendeeList", JSON.stringify(attendeeList));
-  renderAttendeeList();
-
-  form.reset();
-
-  const attendeeCountSpan = document.getElementById("attendeeCount");
-  attendeeCountSpan.textContent = totalCount;
-
-  const progressBar = document.getElementById("progressBar");
-  progressBar.style.width = `${progressPercent}%`;
-
-  // Update the correct team's count
-  let teamCountSpan = null;
-  if (selectedTeam === "water") {
-    teamCountSpan = document.getElementById("waterCount");
-    waterCount = waterCount + 1;
-    teamCountSpan.textContent = waterCount;
-    localStorage.setItem("waterCount", waterCount);
-  } else if (selectedTeam === "zero") {
-    teamCountSpan = document.getElementById("zeroCount");
-    zeroCount = zeroCount + 1;
-    teamCountSpan.textContent = zeroCount;
-    localStorage.setItem("zeroCount", zeroCount);
-  } else if (selectedTeam === "power") {
-    teamCountSpan = document.getElementById("powerCount");
-    powerCount = powerCount + 1;
-    teamCountSpan.textContent = powerCount;
-    localStorage.setItem("powerCount", powerCount);
+  drop.classList.add(type);
+  drop.dataset.type = type;
+  drop.style.left = `${Math.random() * (areaWidth - 32)}px`;
+  drop.style.top = "0px";
+  // Color styling
+  if (type === "blue") {
+    drop.style.background =
+      "linear-gradient(180deg, #00bfff 60%, #0071c5 100%)";
+    drop.style.border = "2px solid #0071c5";
+  } else if (type === "red") {
+    drop.style.background =
+      "linear-gradient(180deg, #00bfff 60%, #0071c5 100%)";
+    drop.style.border = "4px solid #c50000";
+  } else if (type === "green") {
+    drop.style.background =
+      "linear-gradient(180deg, #dda486ff 60%, #dda486ff 100%)";
+    drop.style.border = "2px solid #22c55e";
   }
+  gameArea.appendChild(drop);
+  animateDrop(drop);
+}
 
-  // Check if goal is reached
-  if (totalCount >= maxGoal) {
-    let winningTeam = "";
-    if (waterCount >= zeroCount && waterCount >= powerCount) {
-      winningTeam = "Team Water Wise";
-    } else if (zeroCount >= waterCount && zeroCount >= powerCount) {
-      winningTeam = "Team Net Zero";
-    } else {
-      winningTeam = "Team Renewables";
+function animateDrop(drop) {
+  let top = 0;
+  // During Fun Rush, drops fall faster
+  const speed = funRush ? 18 : 8;
+  const interval = funRush ? 12 : 24;
+  const fall = setInterval(() => {
+    top += speed;
+    drop.style.top = `${top}px`;
+    // Check collision with cup
+    if (top >= 560) {
+      if (isColliding(drop, cup)) {
+        handleCatch(drop);
+        clearInterval(fall);
+        drop.remove();
+      } else {
+        handleMiss(drop);
+        clearInterval(fall);
+        drop.remove();
+      }
     }
-    greetingElement.textContent = `🎉 Goal reached! Congratulations to ${winningTeam}! 🎉`;
-    greetingElement.classList.add("success-message");
-    greetingElement.style.display = "block";
+  }, interval);
+}
+
+function isColliding(drop, cup) {
+  const dropRect = drop.getBoundingClientRect();
+  const cupRect = cup.getBoundingClientRect();
+  return (
+    dropRect.left < cupRect.right &&
+    dropRect.right > cupRect.left &&
+    dropRect.bottom > cupRect.top &&
+    dropRect.top < cupRect.bottom
+  );
+}
+
+function handleCatch(drop) {
+  const type = drop.dataset.type;
+  if (type === "blue") {
+    score++;
+    showToast("+1", "#0071c5");
+  } else if (type === "red") {
+    if (!funRush) {
+      score -= 2;
+      score = Math.max(0, score);
+      showToast("-2", "#c50000");
+      cup.classList.add("shake");
+      setTimeout(() => cup.classList.remove("shake"), 300);
+    } else {
+      showToast("+1", "#0071c5"); // treat as blue during fun rush
+      score++;
+    }
+  } else if (type === "green") {
+    funRush = true;
+    showToast("Fun Rush!", "#22c55e");
+    if (funRushTimeout) clearTimeout(funRushTimeout);
+    funRushTimeout = setTimeout(() => {
+      funRush = false;
+    }, 5000);
+  }
+  document.getElementById("running-number").textContent = score;
+}
+
+function handleMiss(drop) {
+  const type = drop.dataset.type;
+  if (type === "blue") {
+    if (!funRush) {
+      score--;
+      score = Math.max(0, score);
+      showToast("Miss -1", "#0071c5");
+      document.getElementById("running-number").textContent = score;
+    } else {
+      showToast("+0", "#0071c5"); // no penalty during fun rush
+    }
+  }
+  // Red miss: no change
+}
+
+function showToast(msg, color) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  toast.style.background = color || "#0071c5";
+  setTimeout(() => {
+    toast.classList.remove("show");
+    toast.style.background = "";
+  }, 900);
+}
+
+function clearDrops() {
+  document.querySelectorAll(".drop").forEach((d) => d.remove());
+}
+
+function updateCup() {
+  cup.style.left = `${cupX}px`;
+}
+
+// Cup movement: keyboard
+window.addEventListener("keydown", (e) => {
+  if (gameArea.classList.contains("hidden")) return;
+  if (e.key === "ArrowLeft") {
+    cupX = Math.max(0, cupX - 32);
+    updateCup();
+  } else if (e.key === "ArrowRight") {
+    cupX = Math.min(areaWidth - cupWidth, cupX + 32);
+    updateCup();
   }
 });
+
+// Cup movement: drag/touch
+let dragging = false;
+cup.addEventListener("mousedown", (e) => {
+  dragging = true;
+});
+document.addEventListener("mouseup", (e) => {
+  dragging = false;
+});
+document.addEventListener("mousemove", (e) => {
+  if (!dragging) return;
+  const rect = gameArea.getBoundingClientRect();
+  let x = e.clientX - rect.left - cupWidth / 2;
+  cupX = Math.max(0, Math.min(areaWidth - cupWidth, x));
+  updateCup();
+});
+// Touch support
+cup.addEventListener("touchstart", (e) => {
+  dragging = true;
+});
+document.addEventListener("touchend", (e) => {
+  dragging = false;
+});
+document.addEventListener("touchmove", (e) => {
+  if (!dragging) return;
+  const rect = gameArea.getBoundingClientRect();
+  let x = e.touches[0].clientX - rect.left - cupWidth / 2;
+  cupX = Math.max(0, Math.min(areaWidth - cupWidth, x));
+  updateCup();
+});
+
+// Start/Replay/Redo buttons
+startBtn.addEventListener("click", startGame);
+replayBtn.addEventListener("click", startGame);
+document.getElementById("redo-btn").addEventListener("click", function () {
+  startGame();
+});
+
+// Show start screen on load
+showScreen(startScreen);

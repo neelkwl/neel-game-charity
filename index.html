@@ -3,105 +3,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Intel Sustainability Summit Check-In</title>
-    <!-- Add Font Awesome CSS -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <title>Charity Water Game</title>
     <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <!-- Hero section with Intel branding -->
-    <div class="hero">
-      <div class="hero-content">
-        <img src="img/intel-logo.svg" alt="Intel Logo" class="intel-logo" />
-        <h1>Team Sustainability Summit</h1>
-        <div class="hero-divider"></div>
-        <p>
-          <i class="fas fa-leaf"></i> Check-in system for sustainability event
-          attendees
-        </p>
-      </div>
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen">
+      <h1>Water Drop: Classic Catcher</h1>
+      <button id="start-btn">Start Game</button>
     </div>
 
-    <!-- Attendee List (moved below team counters) -->
-    <div class="attendee-list-container">
-      <h3>Attendee List</h3>
-      <ul id="attendeeList" class="attendee-list"></ul>
-    </div>
-    <!-- Attendance tracking -->
-    <div class="attendance-tracker">
-      <div class="attendance-header">
-        <i class="fas fa-users"></i>
-        Attendance: <span id="attendeeCount">0</span>/50
-      </div>
-      <div class="progress-container">
-        <div id="progressBar" class="progress-bar"></div>
-      </div>
-    </div>
-    <div class="container">
-      <!-- Feedback message -->
-      <p id="greeting"></p>
-
-      <!-- Check-in form -->
-      <form class="check-in" id="checkInForm">
-        <label for="attendeeName" class="form-label">Attendee Check-In</label>
-        <div class="form-group">
-          <div class="input-wrapper">
-            <input
-              type="text"
-              id="attendeeName"
-              name="attendeeName"
-              placeholder="Enter name..."
-              required
-            />
-            <select id="teamSelect" name="team" required>
-              <option value="" disabled selected>Select Team...</option>
-              <option value="water">Team Water Wise</option>
-              <option value="zero">Team Net Zero</option>
-              <option value="power">Team Renewables</option>
-            </select>
-          </div>
-          <button type="submit" id="checkInBtn">
-            <i class="fas fa-user-check"></i> Check In
-          </button>
-        </div>
-      </form>
-
-      <!-- Team stats -->
-      <div class="team-stats">
-        <h3>Team Attendance</h3>
-        <div class="teams-grid">
-          <div class="team-card water">
-            <span class="team-name">🌊 Team Water Wise</span>
-            <span class="team-count" id="waterCount">0</span>
-          </div>
-          <div class="team-card zero">
-            <span class="team-name">🌿 Team Net Zero</span>
-            <span class="team-count" id="zeroCount">0</span>
-          </div>
-          <div class="team-card power">
-            <span class="team-name">⚡ Team Renewables</span>
-            <span class="team-count" id="powerCount">0</span>
-          </div>
-        </div>
-        <!-- Attendee List (now directly below team counters) -->
-        <div class="attendee-list-container">
-          <h3>Attendee List</h3>
-          <ul id="attendeeList" class="attendee-list"></ul>
-        </div>
-      </div>
+    <!-- Game HUD -->
+    <div id="hud" class="hidden">
+      <span id="timer">Time: 60s</span>
     </div>
 
-    <footer class="footer">
-      &copy; 2025 Intel •
-      <a
-        href="https://www.intel.com/content/www/us/en/corporate-responsibility/2030-goals.html"
-        class="footer-link"
-        >Sustainability Goals</a
+    <!-- Toast Feedback -->
+    <div id="toast" class="hidden"></div>
+
+    <!-- Game Area -->
+    <div id="game-area" class="hidden">
+      <span id="running-number">0</span>
+      <button
+        id="redo-btn"
+        title="Restart"
+        style="
+          position: absolute;
+          top: 32px;
+          right: 24px;
+          z-index: 21;
+          font-size: 1.2em;
+          padding: 6px 16px;
+          border-radius: 12px;
+          background: #fff;
+          border: 2px solid #1976d2;
+          color: #1976d2;
+          cursor: pointer;
+          font-family: 'Press Start 2P', monospace;
+        "
       >
-    </footer>
+        Redo
+      </button>
+      <div id="cup">
+        <div class="wheel left"></div>
+        <div class="wheel right"></div>
+      </div>
+      <div id="ground"></div>
+      <!-- Drops will be spawned here -->
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="screen hidden">
+      <h2>Game Over!</h2>
+      <p id="final-score"></p>
+      <button id="replay-btn">Play Again</button>
+      <a href="https://www.charitywater.org/" target="_blank">Learn More</a>
+    </div>
 
     <script src="script.js"></script>
   </body>
