@@ -11,10 +11,37 @@
     />
   </head>
   <body>
-    <!-- Start Screen -->
+    <!-- Start Screen (home GUI) -->
     <div id="start-screen" class="screen">
-      <h1>Water Drop: Classic Catcher</h1>
-      <button id="start-btn">Start Game</button>
+      <div class="start-columns">
+        <aside class="start-menu">
+          <h1>Water Drop</h1>
+          <p class="lead">
+            Catch the water drops, avoid pollutants, and trigger Fun Rush for
+            bonus time.
+          </p>
+          <div class="controls">
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty">
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard</option>
+            </select>
+            <button id="start-btn">Start Game</button>
+          </div>
+        </aside>
+        <div
+          class="start-backdrop"
+          role="img"
+          aria-label="Give Water Give Health"
+        >
+          <img src="charity-ss1.png" alt="Give Water Give Health" />
+          <div class="backdrop-overlay">
+            <h2>Give Water, Give Health</h2>
+            <p>All proceeds support clean water initiatives.</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Game HUD -->
@@ -65,5 +92,14 @@
     </div>
 
     <script src="script.js"></script>
+    <a
+      id="charity-cta"
+      href="https://www.charitywater.org/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img src="charity-ss1.png" alt="Give Water Give Health" />
+      <div class="cta-text">Support Charity: Water</div>
+    </a>
   </body>
 </html>

@@ -21,6 +21,18 @@ let dropInterval = null;
 let funRush = false;
 let funRushTimeout = null;
 let bestScore = localStorage.getItem("bestScore") || 0;
+// Compliment messages for milestones
+const milestoneMsgs = ["Great job", "Good work", "Amazing"];
+let milestoneIndex = 0;
+// Difficulty settings
+const difficultySelect = document.getElementById("difficulty");
+let difficulty = "normal";
+const difficultyMap = {
+  easy: { spawnMs: 1400, speedMultiplier: 0.7 },
+  normal: { spawnMs: 900, speedMultiplier: 1 },
+  // Hard: max difficulty set to 2x speed
+  hard: { spawnMs: 450, speedMultiplier: 2 },
+};
 
 // Cup movement
 let cupX = 160; // initial position (centered)
@@ -49,8 +61,12 @@ function startGame() {
   hud.classList.remove("hidden");
   startScreen.classList.add("hidden");
   endScreen.classList.add("hidden");
+  // apply difficulty
+  difficulty = difficultySelect ? difficultySelect.value : "normal";
+  const cfg = difficultyMap[difficulty] || difficultyMap.normal;
   gameInterval = setInterval(gameTick, 1000);
-  dropInterval = setInterval(spawnDrop, 900);
+  if (dropInterval) clearInterval(dropInterval);
+  dropInterval = setInterval(spawnDrop, cfg.spawnMs);
 }
 
 function endGame() {
@@ -113,9 +129,12 @@ function spawnDrop() {
 
 function animateDrop(drop) {
   let top = 0;
-  // During Fun Rush, drops fall faster
-  const speed = funRush ? 18 : 8;
-  const interval = funRush ? 12 : 24;
+  // During Fun Rush, drops fall faster; apply difficulty speed multiplier
+  const cfg = difficultyMap[difficulty] || difficultyMap.normal;
+  const baseSpeed = funRush ? 18 : 8;
+  const baseInterval = funRush ? 12 : 24;
+  const speed = baseSpeed * cfg.speedMultiplier;
+  const interval = Math.max(8, Math.round(baseInterval / cfg.speedMultiplier));
   const fall = setInterval(() => {
     top += speed;
     drop.style.top = `${top}px`;
@@ -170,6 +189,7 @@ function handleCatch(drop) {
     }, 5000);
   }
   document.getElementById("running-number").textContent = score;
+  checkMilestone();
 }
 
 function handleMiss(drop) {
@@ -195,6 +215,40 @@ function showToast(msg, color) {
     toast.classList.remove("show");
     toast.style.background = "";
   }, 900);
+}
+
+// Milestone handling: show a floating message every 5 points
+function checkMilestone() {
+  if (score > 0 && score % 5 === 0) {
+    const msg = milestoneMsgs[milestoneIndex % milestoneMsgs.length];
+    milestoneIndex++;
+    showFloatingMessage(msg);
+  }
+}
+
+function showFloatingMessage(text) {
+  let el = document.getElementById("floating-msg");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "floating-msg";
+    el.className = "floating-msg";
+    gameArea.appendChild(el);
+  }
+  // choose emoji by message
+  let emoji = "🎉";
+  if (text.toLowerCase().includes("good")) emoji = "👍";
+  else if (text.toLowerCase().includes("amazing")) emoji = "🌟";
+  el.innerHTML = `<span class="msg-emoji">${emoji}</span><span class="msg-text">${text}</span>`;
+  // trigger animation
+  el.classList.remove("floating-show");
+  // force reflow to restart animation
+  void el.offsetWidth;
+  el.classList.add("floating-show");
+  // remove after animation
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => {
+    el.classList.remove("floating-show");
+  }, 2000);
 }
 
 function clearDrops() {
